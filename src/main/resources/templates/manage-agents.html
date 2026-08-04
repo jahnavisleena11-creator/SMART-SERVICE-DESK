@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Agents</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container py-4">
+    <h2>Manage Agents</h2>
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <form th:action="@{/admin/agents/create}" method="post" class="row g-2 mb-4">
+        <div class="col-md-4"><input class="form-control" name="fullName" placeholder="Full Name" required></div>
+        <div class="col-md-4"><input class="form-control" name="email" placeholder="Email" required></div>
+        <div class="col-md-4"><input class="form-control" name="password" type="password" placeholder="Password" required></div>
+        <div class="col-12"><button class="btn btn-primary">Create Agent</button></div>
+    </form>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="agent : ${agents}">
+            <td th:text="${agent.fullName}"></td>
+            <td th:text="${agent.email}"></td>
+            <td>
+                <span class="badge" th:classappend="${agent.enabled} ? 'bg-success' : 'bg-secondary'" th:text="${agent.enabled ? 'Active' : 'Blocked'}"></span>
+            </td>
+            <td>
+                <form th:action="@{/admin/agents/{id}/toggle-status(id=${agent.id})}" method="post" class="d-inline">
+                    <button class="btn btn-sm btn-warning" type="submit" th:text="${agent.enabled ? 'Block' : 'Unblock'}"></button>
+                </form>
+                <form th:action="@{/admin/agents/{id}/delete(id=${agent.id})}" method="post" class="d-inline">
+                    <button class="btn btn-sm btn-danger" type="submit">Remove</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

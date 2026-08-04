@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <style>
+        body { background: #f4f7fb; color: #0f172a; }
+        .panel { border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); }
+        .metric-card { border: 0; border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); }
+        .metric-card .card-title { font-size: 0.95rem; letter-spacing: 0.02em; color: #64748b; }
+        .metric-card .display-6 { font-weight: 700; }
+        .quick-link { text-decoration: none; color: inherit; }
+        .quick-link:hover { color: inherit; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <span class="navbar-brand">Admin Dashboard</span>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/dashboard}">Dashboard</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/users}">Manage Users</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/agents}">Manage Agents</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/sla}">Manage SLA</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/reports}">Reports</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/logout}">Logout</a>
+        </div>
+    </div>
+</nav>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Welcome Admin</h2>
+            <p class="text-muted mb-0">A quick overview of the support desk and key actions.</p>
+        </div>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Total Tickets</div><div class="display-6" th:text="${summary != null ? summary.totalTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Open Tickets</div><div class="display-6" th:text="${summary != null ? summary.openTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">In Progress</div><div class="display-6" th:text="${summary != null ? summary.inProgressTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Breached SLA</div><div class="display-6" th:text="${summary != null ? summary.slaBreachedTickets : 0}">0</div></div></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card panel p-3 bg-white">
+                <h5 class="mb-3">Recent 5 Tickets</h5>
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>ID</th><th>Title</th><th>Status</th><th>Priority</th></tr></thead>
+                    <tbody>
+                    <tr th:each="ticket : ${recentTickets}">
+                        <td><a th:href="@{/tickets/{id}(id=${ticket.id})}" th:text="${ticket.id}"></a></td>
+                        <td th:text="${ticket.title}"></td>
+                        <td th:text="${ticket.status}"></td>
+                        <td th:text="${ticket.priority}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card panel p-3 bg-white">
+                <h5 class="mb-3">Recent Notifications</h5>
+                <div class="text-muted" th:if="${#lists.isEmpty(recentNotifications)}">No recent notifications.</div>
+                <ul class="list-group list-group-flush" th:unless="${#lists.isEmpty(recentNotifications)}">
+                    <li class="list-group-item" th:each="notification : ${recentNotifications}" th:text="${notification}"></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card panel p-3 bg-white mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Assign Agent to Ticket</h5>
+            <span class="text-muted small">Tickets waiting for assignment</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Agent</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="ticket : ${tickets}">
+                    <td><a th:href="@{/tickets/{id}(id=${ticket.id})}" th:text="${ticket.id}"></a></td>
+                    <td th:text="${ticket.title}"></td>
+                    <td th:text="${ticket.customerName}"></td>
+                    <td th:text="${ticket.status}"></td>
+                    <td>
+                        <span class="badge" th:classappend="${ticket.assignedAgentName != null ? 'bg-primary' : 'bg-secondary'}" th:text="${ticket.assignedAgentName != null ? ticket.assignedAgentName : 'Unassigned'}"></span>
+                    </td>
+                    <td>
+                        <form class="d-flex gap-2" th:action="@{/admin/tickets/{id}/assign(id=${ticket.id})}" method="post">
+                            <select class="form-select form-select-sm" name="agentId">
+                                <option value="0">Select Agent</option>
+                                <option th:each="agent : ${agents}" th:value="${agent.id}" th:text="${agent.fullName + ' (' + agent.email + ')'}"></option>
+                            </select>
+                            <button class="btn btn-sm btn-primary" type="submit">Assign</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

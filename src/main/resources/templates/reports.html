@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Reports</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #f4f7fb; color: #0f172a; }
+        .panel { border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); }
+        .metric-card { border: 0; border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); }
+        .metric-card .card-title { font-size: 0.95rem; letter-spacing: 0.02em; color: #64748b; }
+        .metric-card .display-6 { font-weight: 700; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+        <span class="navbar-brand">Reports</span>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/dashboard}">Dashboard</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/users}">Manage Users</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/agents}">Manage Agents</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/sla}">Manage SLA</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/admin/reports}">Reports</a>
+            <a class="btn btn-outline-light btn-sm" th:href="@{/logout}">Logout</a>
+        </div>
+    </div>
+</nav>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Reports & Analytics</h2>
+            <p class="text-muted mb-0">Detailed reporting and operational insights.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm">Export to Excel</button>
+            <button class="btn btn-outline-danger btn-sm">Export to PDF</button>
+        </div>
+    </div>
+
+    <div class="card panel p-3 mb-4">
+        <h5 class="mb-3">Filters</h5>
+        <form class="row g-3">
+            <div class="col-md-2"><label class="form-label">Date Range</label><input type="date" class="form-control"></div>
+            <div class="col-md-2"><label class="form-label">Status</label><select class="form-select"><option value="">All</option><option>OPEN</option><option>ASSIGNED</option><option>IN_PROGRESS</option><option>RESOLVED</option><option>CLOSED</option></select></div>
+            <div class="col-md-2"><label class="form-label">Priority</label><select class="form-select"><option value="">All</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select></div>
+            <div class="col-md-2"><label class="form-label">Agent</label><select class="form-select"><option value="">All</option><option th:each="agent : ${agents}" th:value="${agent.id}" th:text="${agent.fullName}"></option></select></div>
+            <div class="col-md-2"><label class="form-label">Customer</label><select class="form-select"><option value="">All</option></select></div>
+            <div class="col-md-2"><label class="form-label">Category</label><select class="form-select"><option value="">All</option></select></div>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Total Tickets</div><div class="display-6" th:text="${summary != null ? summary.totalTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Open Tickets</div><div class="display-6" th:text="${summary != null ? summary.openTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">In Progress</div><div class="display-6" th:text="${summary != null ? summary.inProgressTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Resolved</div><div class="display-6" th:text="${summary != null ? summary.resolvedTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Closed</div><div class="display-6" th:text="${summary != null ? summary.closedTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Breached SLA</div><div class="display-6" th:text="${summary != null ? summary.slaBreachedTickets : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Active Agents</div><div class="display-6" th:text="${dashboard != null ? dashboard.activeAgents : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Active Customers</div><div class="display-6" th:text="${dashboard != null ? dashboard.activeCustomers : 0}">0</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Avg Resolution Time</div><div class="display-6" th:text="${summary != null ? #numbers.formatDecimal(summary.averageResolutionTimeHours, 1, 1) : '0.0'} + 'h'">0.0h</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Avg Response Time</div><div class="display-6" th:text="${summary != null ? #numbers.formatDecimal(summary.averageResponseTimeHours, 1, 1) : '0.0'} + 'h'">0.0h</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">SLA Compliance</div><div class="display-6" th:text="${summary != null ? #numbers.formatDecimal(summary.slaCompliancePercentage, 1, 1) : '0.0'} + '%'">0.0%</div></div></div>
+        <div class="col-md-3"><div class="card metric-card p-3 bg-white"><div class="card-title">Avg Tickets / Agent</div><div class="display-6" th:text="${summary != null ? #numbers.formatDecimal(summary.averageTicketsPerAgent, 1, 1) : '0.0'}">0.0</div></div></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6"><div class="card panel p-3 bg-white"><h5 class="mb-3">Tickets by Priority</h5><canvas id="priorityChart"></canvas></div></div>
+        <div class="col-lg-6"><div class="card panel p-3 bg-white"><h5 class="mb-3">Tickets by Status</h5><canvas id="statusChart"></canvas></div></div>
+        <div class="col-lg-6"><div class="card panel p-3 bg-white"><h5 class="mb-3">Tickets Created Last 7 Days</h5><canvas id="trendChart"></canvas></div></div>
+        <div class="col-lg-6"><div class="card panel p-3 bg-white"><h5 class="mb-3">SLA Compliance</h5><canvas id="slaChart"></canvas></div></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card panel p-3 bg-white">
+                <h5 class="mb-3">Recent Activity</h5>
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Ticket ID</th><th>Customer</th><th>Agent</th><th>Status</th><th>Priority</th><th>Last Updated</th></tr></thead>
+                    <tbody>
+                    <tr th:each="entry : ${summary != null ? summary.recentActivity : null}">
+                        <td th:text="${entry['id']}"></td>
+                        <td th:text="${entry['customer']}"></td>
+                        <td th:text="${entry['agent']}"></td>
+                        <td th:text="${entry['status']}"></td>
+                        <td th:text="${entry['priority']}"></td>
+                        <td th:text="${#temporals.format(entry['updatedAt'], 'yyyy-MM-dd HH:mm')}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card panel p-3 bg-white">
+                <h5 class="mb-3">Top Performing Agents</h5>
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Agent</th><th>Resolved</th><th>Avg Resolution</th><th>SLA Success %</th></tr></thead>
+                    <tbody>
+                    <tr th:each="entry : ${summary != null ? summary.topAgents : null}">
+                        <td th:text="${entry['name']}"></td>
+                        <td th:text="${entry['resolvedTickets']}"></td>
+                        <td th:text="${entry['averageResolutionTimeHours'] + 'h'}"></td>
+                        <td th:text="${entry['slaSuccess'] + '%'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card panel p-3 bg-white">
+        <h5 class="mb-3">SLA Performance Table</h5>
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Ticket ID</th><th>Customer</th><th>Agent</th><th>Status</th><th>SLA Status</th><th>Resolved At</th></tr></thead>
+            <tbody>
+            <tr th:each="ticket : ${tickets}">
+                <td th:text="${ticket.id}"></td>
+                <td th:text="${ticket.customerName}"></td>
+                <td th:text="${ticket.assignedAgentName}"></td>
+                <td th:text="${ticket.status}"></td>
+                <td th:text="${ticket.slaStatus}"></td>
+                <td th:text="${ticket.closedAt != null ? #temporals.format(ticket.closedAt, 'yyyy-MM-dd HH:mm') : '-'}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script th:inline="javascript">
+    const dashboard = /*[[${dashboard}]]*/ null;
+    const priorityLabels = Object.keys(dashboard?.ticketsByPriority || {});
+    const priorityValues = Object.values(dashboard?.ticketsByPriority || {});
+    const statusLabels = Object.keys(dashboard?.ticketsByStatus || {});
+    const statusValues = Object.values(dashboard?.ticketsByStatus || {});
+    const trendLabels = (dashboard?.createdTicketsLast7Days || []).map(item => item.day);
+    const trendValues = (dashboard?.createdTicketsLast7Days || []).map(item => item.count);
+    const slaLabels = Object.keys(dashboard?.slaCompliance || {});
+    const slaValues = Object.values(dashboard?.slaCompliance || {});
+
+    new Chart(document.getElementById('priorityChart'), {
+        type: 'pie',
+        data: { labels: priorityLabels, datasets: [{ data: priorityValues, backgroundColor: ['#2563eb','#f59e0b','#10b981','#ef4444'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    new Chart(document.getElementById('statusChart'), {
+        type: 'bar',
+        data: { labels: statusLabels, datasets: [{ label: 'Tickets', data: statusValues, backgroundColor: '#3b82f6' }] },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: { labels: trendLabels, datasets: [{ label: 'Created Tickets', data: trendValues, borderColor: '#0f766e', tension: 0.3, fill: false }] },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    new Chart(document.getElementById('slaChart'), {
+        type: 'doughnut',
+        data: { labels: slaLabels, datasets: [{ data: slaValues, backgroundColor: ['#22c55e','#ef4444'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+</script>
+</body>
+</html>
